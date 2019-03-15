@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
+	"math/rand"
 	"os"
 	"strings"
+	"time"
 )
 
 type Problem struct {
@@ -13,9 +15,29 @@ type Problem struct {
 	A string
 }
 
-func start(ctx context.Context, p []Problem, pc chan *Problem) {
-	pc <- &p[0]
-	i := 1
+func normalizeString(str string) string {
+	return strings.TrimSpace(strings.ToUpper(str))
+}
+
+func (p *Problem) IsCorrect(answer string) bool {
+	return normalizeString(answer) == normalizeString(p.A)
+}
+
+func shuffle(p []Problem) []Problem {
+	ret := make([]Problem, 0)
+	r := rand.New(rand.NewSource(time.Now().Unix()))
+	for _, i := range r.Perm(len(p)) {
+		val := p[i]
+		ret = append(ret, val)
+	}
+	return ret
+}
+
+func start(ctx context.Context, p []Problem, pc chan *Problem, shuf bool) {
+	if shuf {
+		p = shuffle(p)
+	}
+	i := 0
 	for {
 		select {
 		case pc <- &p[i]:
@@ -32,7 +54,7 @@ func start(ctx context.Context, p []Problem, pc chan *Problem) {
 	}
 }
 
-func StartFromFile(ctx context.Context, filename string) (problemChan chan *Problem, err error) {
+func StartFromFile(ctx context.Context, filename string, shuf bool) (problemChan chan *Problem, err error) {
 	file, err := os.Open(filename)
 
 	if err != nil {
@@ -47,7 +69,7 @@ func StartFromFile(ctx context.Context, filename string) (problemChan chan *Prob
 
 	p := parseLines(lines)
 	pc := make(chan *Problem)
-	go start(ctx, p, pc)
+	go start(ctx, p, pc, shuf)
 
 	return pc, nil
 }

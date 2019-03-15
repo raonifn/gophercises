@@ -16,6 +16,10 @@ type AskedQuestion struct {
 	Answer  string
 }
 
+func (aq *AskedQuestion) IsCorrect() bool {
+	return aq.Problem.IsCorrect(aq.Answer)
+}
+
 func (a *Asker) start(ctx context.Context) {
 	for {
 		select {
