@@ -19,33 +19,31 @@ func main() {
 	flag.Parse()
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
-	pc, nc, err := quiz.StartFromFile(filename, ctx)
+	pc, err := quiz.StartFromFile(ctx, filename)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 
-	anwsChan := quiz.CreateAsker(pc, ctx)
-
-	var question quiz.Problem
+	asker := quiz.CreateAsker(ctx, pc)
+	correct := runQuestions(asker, cancelFunc)
 
 	fmt.Printf("Correct answers: %d\n", correct)
 }
 
-func runQuestions(anwsChan chan string) (correct int) {
+func runQuestions(asker quiz.Asker, cancelFunc context.CancelFunc) (correct int) {
 	timer := time.After(timeout)
 	correct = 0
 	for {
 		select {
-		case anwser, ok := <-anwsChan:
+		case anwser, ok := <-asker.AnswChan:
 			if !ok {
 				return correct
 			}
-			if anwser == question.A {
+			if anwser.Answer == anwser.Problem.A {
 				correct++
 			}
-			nc <- true
 		case <-timer:
 			fmt.Println("Your time has over")
 			cancelFunc()

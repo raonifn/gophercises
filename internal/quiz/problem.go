@@ -13,47 +13,43 @@ type Problem struct {
 	A string
 }
 
-func start(p []Problem, pc chan *Problem, nc chan bool, ctx context.Context) {
+func start(ctx context.Context, p []Problem, pc chan *Problem) {
 	pc <- &p[0]
 	for {
 		i := 1
 		select {
-		case <-nc:
+		case pc <- &p[i]:
+			i++
 			if i == len(p) {
 				close(pc)
-				close(nc)
 				return
 			}
-			pc <- &p[i]
-			i++
 		case <-ctx.Done():
 			fmt.Println("Problemer Closed")
 			close(pc)
-			close(nc)
 			return
 		}
 	}
 }
 
-func StartFromFile(filename string, ctx context.Context) (problemChan chan *Problem, nextChan chan bool, err error) {
+func StartFromFile(ctx context.Context, filename string) (problemChan chan *Problem, err error) {
 	file, err := os.Open(filename)
 
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	r := csv.NewReader(file)
 
 	lines, err := r.ReadAll()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	p := parseLines(lines)
 	pc := make(chan *Problem)
-	nc := make(chan bool)
-	go start(p, pc, nc, ctx)
+	go start(ctx, p, pc)
 
-	return pc, nc, nil
+	return pc, nil
 }
 
 func parseLines(lines [][]string) []Problem {
