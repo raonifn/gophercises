@@ -15,8 +15,8 @@ type Problem struct {
 
 func start(ctx context.Context, p []Problem, pc chan *Problem) {
 	pc <- &p[0]
+	i := 1
 	for {
-		i := 1
 		select {
 		case pc <- &p[i]:
 			i++
