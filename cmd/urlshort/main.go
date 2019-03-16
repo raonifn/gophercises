@@ -19,6 +19,15 @@ func flags() {
 	flag.Parse()
 }
 
+func loadDefault() (urlshort.HandlerStacker, error) {
+	pathsToUrls := map[string]string{
+		"/urlshort-godoc": "https://godoc.org/github.com/gophercises/urlshort",
+		"/yaml-godoc":     "https://godoc.org/gopkg.in/yaml.v2",
+	}
+
+	return urlshort.MapHandler(pathsToUrls)
+}
+
 func loadYml() (urlshort.HandlerStacker, error) {
 	if ymlFilename == "" {
 		return nil, nil
@@ -45,33 +54,23 @@ func loadJson() (urlshort.HandlerStacker, error) {
 	return urlshort.JSONHandler(json)
 }
 
+func load(server *urlshort.Server, loaders ...func() (urlshort.HandlerStacker, error)) {
+	for _, l := range loaders {
+		hs, err := l()
+		if err != nil {
+			fmt.Printf("Error loading handler: %v\n", err)
+		}
+		if hs != nil {
+			server.StackHandler(hs)
+		}
+	}
+}
+
 func main() {
 	flags()
 	server := urlshort.NewServer()
 
-	pathsToUrls := map[string]string{
-		"/urlshort-godoc": "https://godoc.org/github.com/gophercises/urlshort",
-		"/yaml-godoc":     "https://godoc.org/gopkg.in/yaml.v2",
-	}
-
-	hs := urlshort.MapHandler(pathsToUrls)
-	server.StackHandler(hs)
-
-	hs, err := loadYml()
-	if err != nil {
-		panic(err)
-	}
-	if hs != nil {
-		server.StackHandler(hs)
-	}
-
-	hs, err = loadJson()
-	if err != nil {
-		panic(err)
-	}
-	if hs != nil {
-		server.StackHandler(hs)
-	}
+	load(server, loadDefault, loadYml, loadJson)
 
 	fmt.Println("Starting the server on :8080")
 	server.Start(":8080")

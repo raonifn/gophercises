@@ -45,15 +45,15 @@ func resultHandler(content []byte, unmarshal unmarshaller) (HandlerStacker, erro
 	}
 
 	config := resultToConfig(rs)
-	return MapHandler(config), nil
+	return MapHandler(config)
 
 }
 
-func MapHandler(pathsToUrls map[string]string) HandlerStacker {
+func MapHandler(pathsToUrls map[string]string) (HandlerStacker, error) {
 	return func(fallback http.Handler) http.Handler {
 		m := mapper{config: pathsToUrls, fallback: fallback}
 		return http.HandlerFunc(m.handle)
-	}
+	}, nil
 }
 
 func JSONHandler(content []byte) (HandlerStacker, error) {

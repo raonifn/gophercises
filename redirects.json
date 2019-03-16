@@ -1,10 +1,10 @@
 [
     {
-        "path": "/raonifn",
-        "url": "https://github.com/raonifn"
+        "path": "/golang",
+        "url": "https://golang.org/"
     },
     {
-        "path": "/gopher",
-        "url": "https://github.com/raonifn/gophercises"
+        "path": "/examples",
+        "url": "https://gobyexample.com/"
     }
 ]
