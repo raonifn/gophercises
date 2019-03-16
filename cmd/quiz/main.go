@@ -10,9 +10,11 @@ import (
 	"github.com/raonifn/gophercises/internal/quiz"
 )
 
-var filename string
-var timeout time.Duration
-var shuf bool
+var (
+	filename string
+	timeout  time.Duration
+	shuf     bool
+)
 
 func main() {
 	flag.StringVar(&filename, "questions", "problems.csv", "Questions filename")
