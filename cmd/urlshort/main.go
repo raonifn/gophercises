@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 
 	"github.com/raonifn/gophercises/internal/urlshort"
 )
@@ -20,9 +19,9 @@ func flags() {
 	flag.Parse()
 }
 
-func loadYml(handler http.Handler) (http.Handler, error) {
+func loadYml() (urlshort.HandlerStacker, error) {
 	if ymlFilename == "" {
-		return handler, nil
+		return nil, nil
 	}
 
 	yml, err := ioutil.ReadFile(ymlFilename)
@@ -30,12 +29,12 @@ func loadYml(handler http.Handler) (http.Handler, error) {
 		return nil, err
 	}
 
-	return urlshort.YAMLHandler(yml, handler)
+	return urlshort.YAMLHandler(yml)
 }
 
-func loadJson(handler http.Handler) (http.Handler, error) {
+func loadJson() (urlshort.HandlerStacker, error) {
 	if jsonFilename == "" {
-		return handler, nil
+		return nil, nil
 	}
 
 	json, err := ioutil.ReadFile(jsonFilename)
@@ -43,40 +42,37 @@ func loadJson(handler http.Handler) (http.Handler, error) {
 		return nil, err
 	}
 
-	return urlshort.JSONHandler(json, handler)
+	return urlshort.JSONHandler(json)
 }
 
 func main() {
 	flags()
-	mux := defaultMux()
+	server := urlshort.NewServer()
 
 	pathsToUrls := map[string]string{
 		"/urlshort-godoc": "https://godoc.org/github.com/gophercises/urlshort",
 		"/yaml-godoc":     "https://godoc.org/gopkg.in/yaml.v2",
 	}
 
-	handler := urlshort.MapHandler(pathsToUrls, mux)
+	hs := urlshort.MapHandler(pathsToUrls)
+	server.StackHandler(hs)
 
-	handler, err := loadYml(handler)
+	hs, err := loadYml()
 	if err != nil {
 		panic(err)
 	}
+	if hs != nil {
+		server.StackHandler(hs)
+	}
 
-	handler, err = loadJson(handler)
+	hs, err = loadJson()
 	if err != nil {
 		panic(err)
+	}
+	if hs != nil {
+		server.StackHandler(hs)
 	}
 
 	fmt.Println("Starting the server on :8080")
-	http.ListenAndServe(":8080", handler)
-}
-
-func defaultMux() *http.ServeMux {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", hello)
-	return mux
-}
-
-func hello(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Hello, world!")
+	server.Start(":8080")
 }

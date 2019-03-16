@@ -36,7 +36,7 @@ func resultToConfig(rs []redirect) map[string]string {
 	return ret
 }
 
-func resultHandler(content []byte, fallback http.Handler, unmarshal unmarshaller) (http.Handler, error) {
+func resultHandler(content []byte, unmarshal unmarshaller) (HandlerStacker, error) {
 	rs := []redirect{}
 	err := unmarshal(content, &rs)
 
@@ -45,19 +45,21 @@ func resultHandler(content []byte, fallback http.Handler, unmarshal unmarshaller
 	}
 
 	config := resultToConfig(rs)
-	return MapHandler(config, fallback), nil
+	return MapHandler(config), nil
 
 }
 
-func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.Handler {
-	m := mapper{config: pathsToUrls, fallback: fallback}
-	return http.HandlerFunc(m.handle)
+func MapHandler(pathsToUrls map[string]string) HandlerStacker {
+	return func(fallback http.Handler) http.Handler {
+		m := mapper{config: pathsToUrls, fallback: fallback}
+		return http.HandlerFunc(m.handle)
+	}
 }
 
-func JSONHandler(content []byte, fallback http.Handler) (http.Handler, error) {
-	return resultHandler(content, fallback, json.Unmarshal)
+func JSONHandler(content []byte) (HandlerStacker, error) {
+	return resultHandler(content, json.Unmarshal)
 }
 
-func YAMLHandler(content []byte, fallback http.Handler) (http.Handler, error) {
-	return resultHandler(content, fallback, yaml.Unmarshal)
+func YAMLHandler(content []byte) (HandlerStacker, error) {
+	return resultHandler(content, yaml.Unmarshal)
 }
