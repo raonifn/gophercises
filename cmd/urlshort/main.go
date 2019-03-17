@@ -41,7 +41,11 @@ func loadYml() (urlshort.HandlerStacker, error) {
 	return urlshort.YAMLHandler(yml)
 }
 
-func loadJson() (urlshort.HandlerStacker, error) {
+func loadDB() (urlshort.HandlerStacker, error) {
+	return urlshort.DBHandler("my.db")
+}
+
+func loadJSON() (urlshort.HandlerStacker, error) {
 	if jsonFilename == "" {
 		return nil, nil
 	}
@@ -70,7 +74,7 @@ func main() {
 	flags()
 	server := urlshort.NewServer()
 
-	load(server, loadDefault, loadYml, loadJson)
+	load(server, loadDefault, loadYml, loadJSON, loadDB)
 
 	fmt.Println("Starting the server on :8080")
 	server.Start(":8080")
